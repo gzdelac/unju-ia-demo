@@ -1,117 +1,215 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 import time
-import random
 
-# --- CONFIGURACIÓN DE PÁGINA Y MARCA UNJu ---
+# --- 1. CONFIGURACIÓN DE PÁGINA Y ESTILO ---
 st.set_page_config(
-    page_title="Laboratorio IA - UNJu Virtual",
+    page_title="UNJu - Laboratorio IA",
     page_icon="🎓",
     layout="wide"
 )
 
-# Estilos CSS para colores UNJu (Azul Institucional y Ocre/Dorado)
+# Estilos CSS Personalizados (Branding UNJu + Estética INNOA)
 st.markdown("""
     <style>
-    .main {
-        background-color: #f5f5f5;
-    }
+    .main {background-color: #ffffff;}
+    h1 {color: #003057; font-weight: 800;}
+    h2, h3 {color: #cea133;}
     .stButton>button {
-        background-color: #003057; /* Azul UNJu */
-        color: white;
-        border-radius: 5px;
-        border: 2px solid #cea133; /* Dorado UNJu */
+        background-color: #003057; 
+        color: white; 
+        width: 100%;
+        border-radius: 8px; 
+        font-weight: bold;
+        border: 2px solid #cea133;
     }
     .stButton>button:hover {
-        background-color: #cea133;
+        background-color: #cea133; 
         color: #003057;
     }
-    h1 {
-        color: #003057;
+    /* Caja de privacidad */
+    .privacy-box {
+        background-color: #f0f7fb; 
+        padding: 10px; 
+        border-radius: 5px; 
+        border-left: 4px solid #003057; 
+        font-size: 13px;
+        margin-bottom: 10px;
     }
-    h3 {
-        color: #cea133;
+    /* Créditos al pie */
+    .credits {
+        font-size: 11px;
+        color: #666;
+        text-align: center;
+        margin-top: 30px;
+        border-top: 1px solid #ddd;
+        padding-top: 10px;
+        line-height: 1.4;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- CABECERA ---
-col1, col2 = st.columns([1, 5])
-with col1:
-    # Logo de la UNJu (URL pública)
-    st.image("https://upload.wikimedia.org/wikipedia/commons/2/23/Logo_UNJu.png", width=100)
-with col2:
-    st.title("Estrategias y Desafíos de Educar con I.A.")
-    st.markdown("**Nivel Medio y Superior | UNJu Virtual**")
+# --- 2. MEMORIA COMPARTIDA (BASE DE DATOS EN RAM) ---
+@st.cache_resource
+def get_data_store():
+    return []
 
-st.markdown("---")
+votos_globales = get_data_store()
 
-# --- BARRA LATERAL (REGISTRO) ---
+# --- 3. BARRA LATERAL (ZONA DEL ALUMNO) ---
 with st.sidebar:
-    st.header("📝 Registro de Asistencia")
-    st.info("Para interactuar, por favor completa tus datos.")
-    nombre = st.text_input("Nombre y Apellido")
-    profesion = st.selectbox("Área / Materia", ["Docente Nivel Medio", "Docente Universitario", "Estudiante", "Directivo", "Otro"])
+    st.image("https://upload.wikimedia.org/wikipedia/commons/2/23/Logo_UNJu.png", width=90)
+    st.title("🎓 PARTICIPACIÓN")
+    st.markdown("Bienvenido al **Gimnasio Cognitivo**.")
     
-    st.markdown("---")
-    st.write("Estado del sistema: 🟢 En línea")
-
-# --- LÓGICA DE DATOS (Simulada para la Demo) ---
-if 'respuestas' not in st.session_state:
-    st.session_state.respuestas = []
-
-# --- PANEL CENTRAL ---
-st.subheader("📢 Pregunta en Tiempo Real")
-st.markdown("### ¿Cuál es tu principal temor o desafío al integrar la IA en tu aula?")
-
-respuesta_usuario = st.text_area("Escribe tu opinión aquí...", height=100)
-
-if st.button("Enviar Respuesta"):
-    if nombre and respuesta_usuario:
-        nueva_entrada = {
-            "Nombre": nombre,
-            "Perfil": profesion,
-            "Respuesta": respuesta_usuario
-        }
-        st.session_state.respuestas.append(nueva_entrada)
-        st.success("¡Respuesta enviada al servidor!")
-    else:
-        st.error("Por favor completa tu nombre y la respuesta.")
-
-# --- VISUALIZACIÓN DE RESPUESTAS ---
-if len(st.session_state.respuestas) > 0:
-    st.markdown("---")
-    st.subheader(f"📊 Respuestas Recibidas ({len(st.session_state.respuestas)})")
+    st.divider()
     
-    # Mostrar como tabla bonita
-    df = pd.DataFrame(st.session_state.respuestas)
-    st.dataframe(df, use_container_width=True)
+    # --- MÓDULO DE DATOS PERSONALES ---
+    st.subheader("1. Tus Datos")
+    nombre = st.text_input("Nombre Completo")
+    email = st.text_input("Correo Electrónico (Para envío de material)")
+    
+    # Checkbox de Privacidad (Obligatorio)
+    st.markdown("""
+    <div class='privacy-box'>
+        🔐 <b>Protección de Datos:</b> 
+        Tus respuestas serán anónimas en la pantalla pública. Tu correo se usará solo para fines académicos de este taller.
+    </div>
+    """, unsafe_allow_html=True)
+    consentimiento = st.checkbox("Acepto participar y compartir mis datos.")
 
-    st.markdown("---")
+    st.divider()
+
+    # --- MÓDULO DE VOTACIÓN ---
+    st.subheader("2. Encuesta en Vivo")
+    st.write("**¿Sabes detectar si un texto fue escrito por IA?**")
+    opcion = st.radio(
+        "Selecciona una opción:",
+        ["Sí, tengo mis trucos 🕵️", "Tengo dudas / A veces 🤔", "No, me parecen iguales 🤖"],
+        label_visibility="collapsed"
+    )
     
-    # --- LA MAGIA DE LA IA (GEMINI) ---
-    st.header("🧠 Análisis Inteligente (Powered by Gemini)")
-    st.write("El profesor puede solicitar a la IA que lea todas las respuestas y detecte patrones.")
+    justificacion = st.text_input("¿Por qué? (Dinos una palabra clave)")
     
-    if st.button("ANALIZAR TENDENCIAS CON I.A."):
-        with st.spinner('Conectando con Gemini... Leyendo respuestas... Analizando sentimientos...'):
-            time.sleep(3) # Simula tiempo de procesamiento
-            
-            # Lógica simulada para la demo (Segura para presentar)
-            temas = " ".join([r['Respuesta'] for r in st.session_state.respuestas]).lower()
-            analisis = ""
-            
-            if "plagio" in temas or "copia" in temas:
-                analisis = "La IA detecta una preocupación mayoritaria sobre la **integridad académica**. Los docentes temen que los alumnos pierdan la capacidad de escribir por sí mismos."
-            elif "tiempo" in temas or "no se" in temas:
-                analisis = "El patrón principal es la **falta de capacitación técnica**. Existe entusiasmo, pero también una barrera de entrada sobre cómo empezar."
-            else:
-                analisis = "La audiencia muestra una **actitud cautelosa pero optimista**. Se identifica la necesidad de cambiar el rol docente de 'transmisor' a 'mentor'."
-            
-            st.success("✅ Análisis Completado")
-            st.markdown(f"### 🤖 Conclusión de la IA:")
-            st.info(analisis)
-            st.markdown("**Sugerencia pedagógica:** Enfocar el taller en herramientas de detección y pensamiento crítico.")
+    # Botón de envío con validación
+    if st.button("ENVIAR RESPUESTA 🚀"):
+        if not consentimiento:
+            st.error("⚠️ ERROR: Debes aceptar el uso de datos para participar.")
+        elif not nombre or not email:
+            st.warning("⚠️ Faltan datos: Por favor completa Nombre y Email.")
+        else:
+            # Guardamos el voto (Sin el email para la parte pública)
+            nuevo_voto = {
+                "Opción": opcion, 
+                "Justificación": justificacion if justificacion else "Sin comentarios", 
+                "Autor": nombre # El email no se guarda en la lista pública por seguridad
+            }
+            votos_globales.append(nuevo_voto)
+            st.success("¡Voto registrado con éxito!")
+            time.sleep(1)
+            st.rerun()
+
+    # --- MÓDULO DE RECURSOS (DESCARGAS) ---
+    st.divider()
+    st.header("📂 Material de Clase")
+    st.info("Descarga aquí el documento oficial del taller.")
+    
+    # LINK OFICIAL PROPORCIONADO POR GUILLERMO
+    link_documento = "https://docs.google.com/document/d/1AM1gwETYvGE_Crfne9jBpR7ZCHRysXURtl1M6UuA0Uo/edit?usp=sharing"
+    
+    st.link_button("📥 Abrir Documento del Taller", link_documento)
+    
+    # --- CRÉDITOS ---
+    st.markdown("""
+    <div class='credits'>
+        <b>EQUIPO DOCENTE UNJu</b><br>
+        Esp. Guillermo Zenon de la Cámara<br>
+        Mag. Nilda Lozano<br>
+        Prof. Gloria Cano<br><br>
+        <i>UNJu Virtual - 2025</i>
+    </div>
+    """, unsafe_allow_html=True)
+
+# --- 4. PANEL CENTRAL (PANTALLA DEL PROFESOR) ---
+
+# Encabezado Principal
+col_logo, col_titulo = st.columns([1, 6])
+with col_titulo:
+    st.title("Estrategias y Desafíos: IA en Educación")
+    st.markdown("### 📊 Monitor de Aula en Tiempo Real")
+
+# Métricas rápidas
+if len(votos_globales) > 0:
+    st.metric(label="👥 Alumnos Participando Ahora", value=len(votos_globales))
+else:
+    st.info("Esperando la primera participación... ¡Escaneen el QR!")
+
+st.divider()
+
+# --- 5. VISUALIZACIÓN DE DATOS ---
+if st.button("🔄 ACTUALIZAR PANTALLA (DOCENTE)"):
+    st.rerun()
+
+if len(votos_globales) > 0:
+    # Convertimos la lista en DataFrame para graficar
+    df = pd.DataFrame(votos_globales)
+    
+    # Conteo de votos
+    conteo = df['Opción'].value_counts().reset_index()
+    conteo.columns = ['Respuesta', 'Votos']
+    
+    # GRÁFICO DE BARRAS (Plotly) - Colores Institucionales
+    fig = px.bar(
+        conteo, 
+        x='Respuesta', 
+        y='Votos', 
+        text='Votos',
+        color='Respuesta',
+        color_discrete_sequence=['#003057', '#cea133', '#A0A0A0'], # Azul, Ocre, Gris
+        title="Resultados de la Encuesta: Percepción de la IA"
+    )
+    fig.update_layout(height=450, showlegend=False)
+    fig.update_traces(textposition='outside', textfont_size=20)
+    
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # --- Muro de Opiniones (Anónimo para el público) ---
+    col_izq, col_der = st.columns(2)
+    with col_izq:
+        st.subheader("💬 Opiniones del Aula")
+        # Mostramos las últimas 5 justificaciones
+        comentarios = [c for c in df['Justificación'] if c != "Sin comentarios"]
+        if comentarios:
+            for com in comentarios[-5:]:
+                st.info(f"🗨️ {com}")
+        else:
+            st.write("Sin comentarios textuales aún.")
+
+    with col_der:
+        st.subheader("🧠 Análisis IA (Simulado)")
+        st.caption("El docente puede solicitar a Gemini una interpretación de los datos.")
+        
+        if st.button("SOLICITAR CONCLUSIÓN A GEMINI"):
+            with st.spinner('Analizando patrones de respuesta...'):
+                time.sleep(2.5)
+                
+                # Lógica simple para la demo basada en el ganador
+                ganador = conteo.iloc[0]['Respuesta']
+                
+                analisis = f"**Análisis de {len(votos_globales)} respuestas:**\n\n"
+                
+                if "No" in ganador:
+                    analisis += "🚨 **Alerta:** La mayoría de la clase NO distingue textos de IA. Esto confirma la necesidad urgente de alfabetización digital crítica."
+                elif "dudas" in ganador:
+                    analisis += "⚠️ **Oportunidad:** Existe una intuición sobre la IA, pero faltan herramientas técnicas de verificación."
+                else:
+                    analisis += "✅ **Nivel Avanzado:** El grupo muestra confianza, pero debemos validar si es real o sesgo de sobreconfianza."
+                    
+                st.success("Análisis Completado")
+                st.markdown(f"### 🤖 Conclusión:")
+                st.write(analisis)
 
 else:
-    st.info("Esperando respuestas de la audiencia...")
+    # Estado inicial (Vacío)
+    st.warning("⚠️ Aún no hay votos registrados. Por favor ingresen desde la barra lateral.")
