@@ -47,7 +47,6 @@ with st.sidebar:
         elif not nombre or not email:
             st.warning("⚠️ Completa Nombre y Email.")
         else:
-            # Guardamos TODO en la lista interna
             nuevo_voto = {
                 "Fecha": time.strftime("%H:%M:%S"),
                 "Nombre": nombre,
@@ -80,30 +79,40 @@ if len(votos_globales) > 0:
     
     # --- ZONA BLINDADA CON CONTRASEÑA ---
     st.divider()
-    with st.expander("🔐 ÁREA EXCLUSIVA DOCENTE (Requiere Clave)"):
-        password = st.text_input("Ingresa la contraseña de administrador:", type="password")
+    with st.expander("🔐 ÁREA EXCLUSIVA DOCENTE (Administración)"):
+        password = st.text_input("Ingresa la contraseña:", type="password")
         
-        # CONTRASEÑA DEL PROFESOR
+        # CONTRASEÑA
         clave_correcta = "unju2025" 
         
         if password == clave_correcta:
-            st.success("✅ Acceso Autorizado")
-            st.info("Descarga la lista completa con los correos de los alumnos.")
+            st.success("✅ Acceso de Administrador")
             
-            # Botón de descarga
-            csv = df.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="📥 DESCARGAR BASE DE DATOS (CSV)",
-                data=csv,
-                file_name='asistencia_segura_unju.csv',
-                mime='text/csv',
-            )
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.info("Descarga la base de datos completa.")
+                csv = df.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="📥 DESCARGAR EXCEL/CSV",
+                    data=csv,
+                    file_name='asistencia_unju.csv',
+                    mime='text/csv',
+                )
+            
+            with col_b:
+                st.warning("Zona de Peligro")
+                if st.button("🗑️ BORRAR TODAS LAS ENCUESTAS"):
+                    votos_globales.clear()
+                    st.success("¡Base de datos vaciada!")
+                    time.sleep(1)
+                    st.rerun()
+                    
         elif password:
             st.error("⛔ Contraseña incorrecta")
 
     st.divider()
 
-    # --- GRÁFICOS PÚBLICOS (SIN MOSTRAR EMAIL) ---
+    # --- GRÁFICOS PÚBLICOS ---
     conteo = df['Opción'].value_counts().reset_index()
     conteo.columns = ['Respuesta', 'Votos']
     
@@ -111,7 +120,7 @@ if len(votos_globales) > 0:
                  color_discrete_sequence=['#003057', '#cea133', '#A0A0A0'])
     st.plotly_chart(fig, use_container_width=True)
     
-    # TABLA PÚBLICA (FILTRADA - Solo muestra Nombre y Opinión)
+    # TABLA PÚBLICA
     st.subheader("📝 Últimas participaciones")
     st.dataframe(df[["Nombre", "Opción", "Justificación"]], use_container_width=True, hide_index=True)
 
